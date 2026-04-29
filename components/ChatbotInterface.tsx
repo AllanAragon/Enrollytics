@@ -1,18 +1,60 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { MAX_MESSAGE_LENGTH } from '@/app/api/chat/route'
+import { MAX_MESSAGE_LENGTH } from '@/lib/chat/intent-matcher'
+import type { ChartData } from '@/app/api/chat/route'
 
 type Message = {
   role: 'user' | 'assistant'
   content: string
+  chart?: ChartData
+  source?: 'rule-based' | 'ai-generated'
 }
 
-type ChatbotInterfaceProps = {
-  enrollmentContext: string
+// Render **bold** markdown inline
+function renderText(text: string): React.ReactNode {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g)
+  return parts.map((part, i) =>
+    part.startsWith('**') && part.endsWith('**') ? (
+      <strong key={i}>{part.slice(2, -2)}</strong>
+    ) : (
+      <span key={i}>{part}</span>
+    )
+  )
 }
 
-export default function ChatbotInterface({ enrollmentContext }: ChatbotInterfaceProps) {
+function InlineBarChart({ chart }: { chart: ChartData }) {
+  const dataset = chart.datasets[0]
+  const maxValue = Math.max(...dataset.data, 1)
+
+  return (
+    <div className="mt-3 bg-white rounded-lg border border-gray-200 p-3">
+      <p className="text-xs font-semibold text-gray-700 mb-3">{chart.title}</p>
+      <div className="space-y-2">
+        {chart.labels.map((label, i) => (
+          <div key={i} className="flex items-center gap-2">
+            <div className="w-20 text-xs text-gray-500 text-right truncate flex-shrink-0">{label}</div>
+            <div className="flex-1 bg-gray-100 rounded h-6 overflow-hidden">
+              <div
+                className="h-full bg-indigo-500 rounded flex items-center justify-end pr-2 transition-all duration-500"
+                style={{
+                  width: `${(dataset.data[i] / maxValue) * 100}%`,
+                  minWidth: dataset.data[i] > 0 ? '2rem' : '0',
+                }}
+              >
+                {dataset.data[i] > 0 && (
+                  <span className="text-white text-xs font-medium">{dataset.data[i]}</span>
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+export default function ChatbotInterface() {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
@@ -35,15 +77,14 @@ export default function ChatbotInterface({ enrollmentContext }: ChatbotInterface
 
     setInput('')
     setError('')
-    const userMessage: Message = { role: 'user', content: trimmed }
-    setMessages((prev) => [...prev, userMessage])
+    setMessages((prev) => [...prev, { role: 'user', content: trimmed }])
     setLoading(true)
 
     try {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: trimmed, context: enrollmentContext }),
+        body: JSON.stringify({ message: trimmed }),
       })
 
       const data = await res.json()
@@ -51,7 +92,15 @@ export default function ChatbotInterface({ enrollmentContext }: ChatbotInterface
       if (!res.ok) {
         setError(data.error || 'An error occurred. Please try again.')
       } else {
-        setMessages((prev) => [...prev, { role: 'assistant', content: data.reply }])
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: 'assistant',
+            content: data.reply,
+            chart: data.chart,
+            source: data.source,
+          },
+        ])
       }
     } catch {
       setError('Failed to connect to the AI service. Please check your connection.')
@@ -69,9 +118,11 @@ export default function ChatbotInterface({ enrollmentContext }: ChatbotInterface
 
   const suggestedQuestions = [
     'What is the total number of students enrolled?',
+    'Show enrollment by year',
+    'How many students per department?',
+    'What is the year-over-year growth rate?',
     'Which program has the most students?',
-    'What is the year-over-year enrollment growth?',
-    'How many students are enrolled per department?',
+    'What is the average age of students?',
   ]
 
   return (
@@ -90,7 +141,7 @@ export default function ChatbotInterface({ enrollmentContext }: ChatbotInterface
         </div>
         <div>
           <h3 className="text-white font-semibold text-sm">Enrollment AI Assistant</h3>
-          <p className="text-indigo-200 text-xs">Powered by Google Gemini</p>
+          <p className="text-indigo-200 text-xs">Powered by Google Gemini · Intent-optimized</p>
         </div>
         <div className="ml-auto flex items-center gap-1.5">
           <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
@@ -127,14 +178,39 @@ export default function ChatbotInterface({ enrollmentContext }: ChatbotInterface
                 </svg>
               )}
             </div>
-            <div
-              className={`max-w-[75%] rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap ${
-                msg.role === 'user'
-                  ? 'bg-indigo-600 text-white rounded-tr-sm'
-                  : 'bg-gray-100 text-gray-800 rounded-tl-sm'
-              }`}
-            >
-              {msg.content}
+
+            <div className="flex flex-col gap-1 max-w-[80%]">
+              <div
+                className={`rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap ${
+                  msg.role === 'user'
+                    ? 'bg-indigo-600 text-white rounded-tr-sm'
+                    : 'bg-gray-100 text-gray-800 rounded-tl-sm'
+                }`}
+              >
+                {msg.role === 'assistant' ? renderText(msg.content) : msg.content}
+                {msg.chart && <InlineBarChart chart={msg.chart} />}
+              </div>
+
+              {/* Source badge */}
+              {msg.role === 'assistant' && msg.source && (
+                <div className="flex items-center gap-1">
+                  {msg.source === 'rule-based' ? (
+                    <span className="text-xs text-green-600 flex items-center gap-1">
+                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
+                      </svg>
+                      Answered instantly
+                    </span>
+                  ) : (
+                    <span className="text-xs text-purple-600 flex items-center gap-1">
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                      </svg>
+                      AI-generated
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         ))}
@@ -176,7 +252,7 @@ export default function ChatbotInterface({ enrollmentContext }: ChatbotInterface
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Suggested Questions (only when at start) */}
+      {/* Suggested Questions (only at conversation start) */}
       {messages.length === 1 && (
         <div className="px-4 pb-2">
           <p className="text-xs text-gray-500 mb-2">Suggested questions:</p>
@@ -201,7 +277,7 @@ export default function ChatbotInterface({ enrollmentContext }: ChatbotInterface
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Ask about enrollment insights... (Enter to send)"
+            placeholder="Ask about enrollment insights… (Enter to send)"
             rows={2}
             maxLength={MAX_MESSAGE_LENGTH}
             className="flex-1 resize-none rounded-xl border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent placeholder-gray-400"
@@ -223,9 +299,10 @@ export default function ChatbotInterface({ enrollmentContext }: ChatbotInterface
           </button>
         </div>
         <p className="text-xs text-gray-400 mt-1.5">
-          Responses are grounded in your enrollment data. Press Shift+Enter for a new line.
+          Common questions are answered instantly. Press Shift+Enter for a new line.
         </p>
       </div>
     </div>
   )
 }
+

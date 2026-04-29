@@ -1,98 +1,6 @@
-import { mockStudents, mockPrograms, mockDepartments } from '@/lib/mock-data'
-import { isSupabaseConfigured } from '@/lib/supabase/client'
-import { createClient } from '@/lib/supabase/server'
 import ChatbotInterface from '@/components/ChatbotInterface'
 
-type StudentSummary = { age: number; enrolled_year: number; program_id: string | null }
-
-async function buildEnrollmentContext(): Promise<string> {
-  const currentYear = new Date().getFullYear()
-
-  let students: StudentSummary[] = mockStudents
-  let programs = mockPrograms
-  let departments = mockDepartments
-  let totalStudents = mockStudents.length
-
-  if (isSupabaseConfigured) {
-    try {
-      const supabase = await createClient()
-      if (supabase) {
-        const [studentsRes, programsRes, departmentsRes] = await Promise.all([
-          supabase.from('students').select('age, enrolled_year, program_id').limit(500),
-          supabase.from('programs').select('*'),
-          supabase.from('departments').select('*'),
-        ])
-        if (studentsRes.data) students = studentsRes.data
-        if (programsRes.data) programs = programsRes.data
-        if (departmentsRes.data) departments = departmentsRes.data
-        totalStudents = students.length
-      }
-    } catch {
-      // fall back to mock data
-    }
-  }
-
-  // Build a text summary of the enrollment data
-  const enrollmentByYear: Record<number, number> = {}
-  for (const s of students) {
-    enrollmentByYear[s.enrolled_year] = (enrollmentByYear[s.enrolled_year] || 0) + 1
-  }
-
-  const studentsByProgram = programs.map((p) => {
-    const count = students.filter((s) => s.program_id === p.id).length
-    const dept = departments.find((d) => d.id === p.department_id)
-    return { name: p.name, code: p.code, dept: dept?.code ?? 'N/A', count }
-  }).sort((a, b) => b.count - a.count)
-
-  const studentsByDept = departments.map((d) => {
-    const deptPrograms = programs.filter((p) => p.department_id === d.id)
-    const count = students.filter((s) => deptPrograms.some((p) => p.id === s.program_id)).length
-    return { name: d.name, code: d.code, count }
-  })
-
-  const avgAge =
-    students.length > 0
-      ? (students.reduce((sum, s) => sum + s.age, 0) / students.length).toFixed(1)
-      : 'N/A'
-
-  const currentYearCount = students.filter((s) => s.enrolled_year === currentYear).length
-  const prevYearCount = students.filter((s) => s.enrolled_year === currentYear - 1).length
-  const growthRate =
-    prevYearCount > 0
-      ? (((currentYearCount - prevYearCount) / prevYearCount) * 100).toFixed(1)
-      : 'N/A'
-
-  const lines: string[] = [
-    `=== ENROLLYTICS DATA SUMMARY (as of ${currentYear}) ===`,
-    `Total Students: ${totalStudents}`,
-    `Average Student Age: ${avgAge} years`,
-    `Current Year (${currentYear}) Enrollments: ${currentYearCount}`,
-    `Previous Year (${currentYear - 1}) Enrollments: ${prevYearCount}`,
-    `Year-over-Year Growth: ${growthRate}%`,
-    '',
-    '--- Enrollment by Year ---',
-    ...Object.entries(enrollmentByYear)
-      .sort(([a], [b]) => Number(a) - Number(b))
-      .map(([year, count]) => `  ${year}: ${count} students`),
-    '',
-    '--- Students by Department ---',
-    ...studentsByDept.map(
-      (d) =>
-        `  ${d.code} (${d.name}): ${d.count} students`
-    ),
-    '',
-    '--- Programs (sorted by enrollment) ---',
-    ...studentsByProgram.map(
-      (p) =>
-        `  ${p.code} [${p.dept}] - ${p.name}: ${p.count} students`
-    ),
-  ]
-
-  return lines.join('\n')
-}
-
-export default async function ChatbotPage() {
-  const enrollmentContext = await buildEnrollmentContext()
+export default function ChatbotPage() {
   const isConfigured = !!process.env.GOOGLE_GEMINI_API_KEY
 
   return (
@@ -133,15 +41,16 @@ export default async function ChatbotPage() {
               >
                 Google AI Studio
               </a>
-              .
+              . Common enrollment questions are answered instantly without an API key.
             </p>
           </div>
         </div>
       )}
 
       <div className="flex-1 min-h-0 overflow-hidden">
-        <ChatbotInterface enrollmentContext={enrollmentContext} />
+        <ChatbotInterface />
       </div>
     </div>
   )
 }
+
