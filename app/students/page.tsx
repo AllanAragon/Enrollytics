@@ -86,7 +86,7 @@ export default function StudentsPage() {
       setError('Please enter a valid age.')
       return
     }
-    if (isNaN(enrolled_year) || enrolled_year < 1900 || enrolled_year > currentYear + 1) {
+    if (isNaN(enrolled_year) || enrolled_year < 1900 || enrolled_year > currentYear) {
       setError('Please enter a valid enrolled year.')
       return
     }
