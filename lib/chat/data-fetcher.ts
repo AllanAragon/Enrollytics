@@ -141,7 +141,8 @@ export async function fetchAverageAge(db: Db): Promise<number> {
     const sum = mockStudents.reduce((acc, s) => acc + s.age, 0)
     return mockStudents.length > 0 ? sum / mockStudents.length : 0
   }
-  const { data } = await db.from('students').select('age').limit(1000)
+  // Fetch all ages without a limit for accurate average
+  const { data } = await db.from('students').select('age')
   if (!data || data.length === 0) return 0
   return data.reduce((acc, s) => acc + s.age, 0) / data.length
 }

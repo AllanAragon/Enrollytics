@@ -158,7 +158,7 @@ ${summaryText}
 
 User question: "${message}"
 
-Respond ONLY with a valid JSON object (no markdown code blocks, no text outside JSON):
+Respond with a valid JSON object. You may wrap it in a \`\`\`json code block if needed:
 {"reply":"your concise plain-text insight","chart":{"type":"bar","title":"chart title","labels":["L1","L2"],"datasets":[{"label":"Series","data":[1,2]}]}}
 
 Rules:

@@ -11,11 +11,17 @@ export type Intent =
 
 // Patterns ordered most-specific first to avoid false matches
 const PATTERNS: [Intent, RegExp][] = [
-  ['growth_rate',              /\b(growth rate|year.?over.?year|yoy)\b|\b(how much|is the).*(grew|grow|increas|decreas|chang)/i],
+  // Explicit growth/comparison terms
+  ['growth_rate',              /\bgrowth rate\b|\byear.?over.?year\b|\byoy\b|\bhow much.*(grew|grow|increas|decreas|chang)/i],
+  // Age-related queries
   ['average_age',              /\baverage age\b|\bavg age\b|\bmean age\b|\bhow old\b/i],
+  // Year-based breakdown or trends
   ['enrollment_by_year',       /\bby year\b|\bper year\b|\beach year\b|\byearly\b|\bannual(ly)?\b|\byear.?wise\b|\byear breakdown\b|\byear trend\b|\bover the years?\b/i],
+  // Department-level breakdown
   ['enrollment_by_department', /\bby department\b|\bper department\b|\beach department\b|\bdepartment breakdown\b|\bby college\b|\bper college\b/i],
+  // Program-level breakdown
   ['enrollment_by_program',    /\bby program\b|\bper program\b|\beach program\b|\bprogram breakdown\b|\btop programs?\b|\bmost enrolled program\b|\bmost popular program\b/i],
+  // Overall/total headcount
   ['total_students',           /\btotal students\b|\btotal enrollment\b|\bhow many students\b|\bstudent count\b|\bnumber of students\b|\boverall enrollment\b/i],
 ]
 
