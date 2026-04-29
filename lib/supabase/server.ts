@@ -26,7 +26,9 @@ export async function createClient() {
               cookieStore.set(name, value, options)
             )
           } catch {
-            // The `setAll` method was called from a Server Component.
+            // Silently ignored: cookies().set() throws when called from a Server Component
+            // during static rendering. This is expected behavior — the middleware will
+            // handle refreshing the session cookie instead.
           }
         },
       },
