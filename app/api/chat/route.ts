@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from '@google/generative-ai'
+import { GoogleGenAI } from '@google/genai'
 import { NextRequest, NextResponse } from 'next/server'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
@@ -191,14 +191,13 @@ RULES:
 - If data is insufficient, only return "reply" without chart
 `;
 
-  const genAI = new GoogleGenerativeAI(GEMINI_API_KEY)
-  const model = genAI.getGenerativeModel({
+  const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY })
+  const response = await ai.models.generateContent({
     model: 'gemini-1.5-flash-latest',
-    generationConfig: { temperature: 0.3, maxOutputTokens: 1024 },
+    contents: prompt,
+    config: { temperature: 0.3, maxOutputTokens: 1024 },
   })
-
-  const result = await model.generateContent(prompt)
-  const text = result.response.text()
+  const text = response.text ?? ''
 
   try {
     const parsed = JSON.parse(extractJSON(text))
