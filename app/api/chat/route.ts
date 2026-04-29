@@ -149,26 +149,51 @@ async function buildAIResponse(message: string, db: Db): Promise<ChatApiResponse
   const summary = await fetchCompactSummary(db)
   const summaryText = summaryToText(summary)
 
-  const prompt = `You are an AI assistant for Enrollytics, a Freshman Enrollment Analytics System.
-Only answer questions related to student enrollment, academic programs, departments, and related analytics.
-If the question is unrelated to enrollment data, politely decline.
+const prompt = `
+You are an AI assistant for Enrollytics, a Freshman Enrollment Analytics System.
 
-Current enrollment data:
+You ONLY answer questions about:
+- student enrollment
+- academic programs
+- departments
+- enrollment analytics
+
+If the question is unrelated, respond with:
+{"reply":"Sorry, I can only answer questions related to enrollment data."}
+
+Context Data:
 ${summaryText}
 
-User question: "${message}"
+User Question:
+"${message}"
 
-Respond with a valid JSON object. You may wrap it in a \`\`\`json code block if needed:
-{"reply":"your concise plain-text insight","chart":{"type":"bar","title":"chart title","labels":["L1","L2"],"datasets":[{"label":"Series","data":[1,2]}]}}
+STRICT INSTRUCTIONS:
+- Return ONLY a valid JSON object
+- DO NOT include markdown, code blocks, or explanations
+- DO NOT include text outside JSON
 
-Rules:
-- "chart" is optional — include it only when comparing multiple data points that benefit from a chart
-- Use "type":"bar" for category comparisons, "type":"line" for year/time trends
-- Keep "reply" concise and professional`
+JSON FORMAT:
+{
+  "reply": "concise insight",
+  "chart": {
+    "type": "bar | line | pie",
+    "title": "optional title",
+    "labels": [],
+    "values": []
+  }
+}
+
+RULES:
+- "chart" is OPTIONAL (omit if not needed)
+- Use "bar" for comparisons
+- Use "line" for trends over time
+- Keep reply short and factual
+- If data is insufficient, only return "reply" without chart
+`;
 
   const genAI = new GoogleGenerativeAI(GEMINI_API_KEY)
   const model = genAI.getGenerativeModel({
-    model: 'gemini-1.5-flash',
+    model: 'gemini-1.5-flash-latest',
     generationConfig: { temperature: 0.3, maxOutputTokens: 1024 },
   })
 
