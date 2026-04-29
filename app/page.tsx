@@ -1,6 +1,7 @@
 import { isSupabaseConfigured } from '@/lib/supabase/client'
 import { mockStudents, mockPrograms, mockDepartments } from '@/lib/mock-data'
 import ConfigNotice from '@/components/ConfigNotice'
+import DashboardAnalytics from '@/components/DashboardAnalytics'
 
 export default async function DashboardPage() {
   const configured = isSupabaseConfigured
@@ -26,32 +27,11 @@ export default async function DashboardPage() {
 
       {!configured && <ConfigNotice />}
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <StatCard
-          title="Total Students"
-          value={studentCount}
-          icon="👨‍🎓"
-          color="bg-blue-500"
-        />
-        <StatCard
-          title="Programs"
-          value={programCount}
-          icon="📚"
-          color="bg-green-500"
-        />
-        <StatCard
-          title="Departments"
-          value={departmentCount}
-          icon="🏛️"
-          color="bg-purple-500"
-        />
-        <StatCard
-          title="Enrolled This Year"
-          value={enrolledThisYear}
-          icon="🎓"
-          color="bg-orange-500"
-        />
+     
+
+      {/* Analytics Section */}
+      <div className="mb-8">
+        <DashboardAnalytics />
       </div>
 
       {/* Quick Links */}

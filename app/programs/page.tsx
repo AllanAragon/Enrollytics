@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { createClient, isSupabaseConfigured } from '@/lib/supabase/client'
 import { mockPrograms, mockDepartments } from '@/lib/mock-data'
 import ConfigNotice from '@/components/ConfigNotice'
 import { Program, Department } from '@/types/database'
+import { PlusIcon, EditIcon, TrashIcon, CheckIcon, XIcon } from '@/components/Icons'
 
 const emptyForm = { name: '', code: '', description: '', department_id: '' }
 
@@ -16,6 +17,10 @@ export default function ProgramsPage() {
   const [editing, setEditing] = useState<Program | null>(null)
   const [form, setForm] = useState(emptyForm)
   const [error, setError] = useState('')
+  
+  // Filter states
+  const [searchText, setSearchText] = useState<string>('')
+  const [filterDepartment, setFilterDepartment] = useState<string>('')
 
   useEffect(() => {
     fetchData()
@@ -41,7 +46,42 @@ export default function ProgramsPage() {
 
   function getDeptName(id: string | null) {
     if (!id) return '—'
+    return departments.find(d => d.id === id)?.code || '—'
+  }
+
+  function getDeptFullName(id: string | null) {
+    if (!id) return '—'
     return departments.find(d => d.id === id)?.name || '—'
+  }
+
+  // Filtered programs based on search text and department filter
+  const filteredPrograms = useMemo(() => {
+    return programs.filter(program => {
+      // Filter by department
+      if (filterDepartment && program.department_id !== filterDepartment) {
+        return false
+      }
+      
+      // Filter by search text (search in name, code, and description)
+      if (searchText) {
+        const search = searchText.toLowerCase()
+        const matchesName = program.name.toLowerCase().includes(search)
+        const matchesCode = program.code.toLowerCase().includes(search)
+        const matchesDescription = program.description?.toLowerCase().includes(search) || false
+        
+        if (!matchesName && !matchesCode && !matchesDescription) {
+          return false
+        }
+      }
+      
+      return true
+    })
+  }, [programs, searchText, filterDepartment])
+
+  // Clear all filters
+  function clearFilters() {
+    setSearchText('')
+    setFilterDepartment('')
   }
 
   function openAdd() {
@@ -115,19 +155,66 @@ export default function ProgramsPage() {
         </div>
         <button
           onClick={openAdd}
-          className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors font-medium"
+          className="bg-indigo-600 text-white px-5 py-3 rounded-lg hover:bg-indigo-700 transition-all font-semibold shadow-md hover:shadow-lg flex items-center gap-2"
         >
-          + Add Program
+          <PlusIcon className="w-5 h-5" />
+          Add Program
         </button>
       </div>
 
       {!isSupabaseConfigured && <ConfigNotice />}
 
+      {/* Filters Section */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-gray-900">Filter Programs</h3>
+          {(searchText || filterDepartment) && (
+            <button
+              onClick={clearFilters}
+              className="text-sm text-indigo-600 hover:text-indigo-800 font-medium flex items-center gap-1"
+            >
+              <XIcon className="w-4 h-4" />
+              Clear Filters
+            </button>
+          )}
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Search</label>
+            <input
+              type="text"
+              value={searchText}
+              onChange={e => setSearchText(e.target.value)}
+              placeholder="Search by name, code, or description..."
+              className="w-full border-2 border-gray-300 bg-white text-gray-900 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors placeholder:text-gray-400"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Department</label>
+            <select
+              value={filterDepartment}
+              onChange={e => setFilterDepartment(e.target.value)}
+              className="w-full border-2 border-gray-300 bg-white text-gray-900 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+            >
+              <option value="">All Departments</option>
+              {departments.map(dept => (
+                <option key={dept.id} value={dept.id}>{dept.name} ({dept.code})</option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <div className="mt-4 flex items-center gap-2 text-sm text-gray-600">
+          <span className="font-medium">Showing {filteredPrograms.length} of {programs.length} programs</span>
+        </div>
+      </div>
+
       <div className="bg-white rounded-xl shadow-sm border border-gray-200">
         {loading ? (
           <div className="p-8 text-center text-gray-500">Loading...</div>
-        ) : programs.length === 0 ? (
-          <div className="p-8 text-center text-gray-500">No programs found. Add one to get started.</div>
+        ) : filteredPrograms.length === 0 ? (
+          <div className="p-8 text-center text-gray-500">
+            {programs.length === 0 ? 'No programs found. Add one to get started.' : 'No programs match the selected filters.'}
+          </div>
         ) : (
           <table className="w-full">
             <thead>
@@ -140,7 +227,7 @@ export default function ProgramsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {programs.map(prog => (
+              {filteredPrograms.map(prog => (
                 <tr key={prog.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 font-medium text-gray-900">{prog.name}</td>
                   <td className="px-6 py-4">
@@ -149,8 +236,12 @@ export default function ProgramsPage() {
                   <td className="px-6 py-4 text-gray-500 text-sm">{getDeptName(prog.department_id)}</td>
                   <td className="px-6 py-4 text-gray-500 text-sm">{prog.description || '—'}</td>
                   <td className="px-6 py-4 text-right space-x-2">
-                    <button onClick={() => openEdit(prog)} className="text-indigo-600 hover:text-indigo-800 text-sm font-medium">Edit</button>
-                    <button onClick={() => handleDelete(prog.id)} className="text-red-600 hover:text-red-800 text-sm font-medium">Delete</button>
+                    <button onClick={() => openEdit(prog)} className="inline-flex items-center gap-2 bg-indigo-100 text-indigo-700 hover:bg-indigo-600 hover:text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
+                      <EditIcon className="w-4 h-4" />
+                    </button>
+                    <button onClick={() => handleDelete(prog.id)} className="inline-flex items-center gap-2 bg-red-100 text-red-700 hover:bg-red-600 hover:text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
+                      <TrashIcon className="w-4 h-4" />
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -168,31 +259,33 @@ export default function ProgramsPage() {
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               {error && <div className="text-red-600 text-sm bg-red-50 p-3 rounded-lg">{error}</div>}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
+                <label className="block text-sm font-semibold text-gray-800 mb-2">Name <span className="text-red-500">*</span></label>
                 <input
                   type="text"
                   value={form.name}
                   onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full border-2 border-gray-400 bg-gray-50 text-gray-900 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:bg-white transition-colors placeholder:text-gray-400"
                   placeholder="e.g. Bachelor of Science in Computer Science"
+                  required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Code *</label>
+                <label className="block text-sm font-semibold text-gray-800 mb-2">Code <span className="text-red-500">*</span></label>
                 <input
                   type="text"
                   value={form.code}
                   onChange={e => setForm(f => ({ ...f, code: e.target.value }))}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full border-2 border-gray-400 bg-gray-50 text-gray-900 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:bg-white transition-colors placeholder:text-gray-400"
                   placeholder="e.g. BSCS"
+                  required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
+                <label className="block text-sm font-semibold text-gray-800 mb-2">Department</label>
                 <select
                   value={form.department_id}
                   onChange={e => setForm(f => ({ ...f, department_id: e.target.value }))}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full border-2 border-gray-400 bg-gray-50 text-gray-900 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:bg-white transition-colors"
                 >
                   <option value="">— Select Department —</option>
                   {departments.map(d => (
@@ -201,20 +294,21 @@ export default function ProgramsPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <label className="block text-sm font-semibold text-gray-800 mb-2">Description</label>
                 <textarea
                   value={form.description}
                   onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full border-2 border-gray-400 bg-gray-50 text-gray-900 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:bg-white transition-colors placeholder:text-gray-400"
                   rows={3}
                   placeholder="Optional description"
                 />
               </div>
-              <div className="flex gap-3 pt-2">
-                <button type="submit" className="flex-1 bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 font-medium">
-                  {editing ? 'Update' : 'Add'}
+              <div className="flex gap-3 pt-4">
+                <button type="submit" className="flex-1 bg-indigo-600 text-white py-3 rounded-lg hover:bg-indigo-700 font-semibold shadow-md hover:shadow-lg transition-all inline-flex items-center justify-center gap-2">
+                  {editing ? <><CheckIcon className="w-5 h-5" /> Update Program</> : <><PlusIcon className="w-5 h-5" /> Add Program</>}
                 </button>
-                <button type="button" onClick={() => setShowModal(false)} className="flex-1 border border-gray-300 py-2 rounded-lg hover:bg-gray-50 font-medium">
+                <button type="button" onClick={() => setShowModal(false)} className="flex-1 border-2 border-gray-400 bg-white text-gray-700 py-3 rounded-lg hover:bg-gray-100 font-semibold transition-all inline-flex items-center justify-center gap-2">
+                  <XIcon className="w-5 h-5" />
                   Cancel
                 </button>
               </div>
