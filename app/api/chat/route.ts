@@ -2,6 +2,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai'
 import { NextRequest, NextResponse } from 'next/server'
 
 const GEMINI_API_KEY = process.env.GOOGLE_GEMINI_API_KEY
+export const MAX_MESSAGE_LENGTH = 2000
 
 export async function POST(req: NextRequest) {
   if (!GEMINI_API_KEY) {
@@ -24,9 +25,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Message is required.' }, { status: 400 })
   }
 
-  const trimmedMessage = message.trim().slice(0, 2000)
+  const trimmedMessage = message.trim().slice(0, MAX_MESSAGE_LENGTH)
 
-  const systemPrompt = `You are an AI assistant for Enrollytics, a Freshmen Enrollment Analytics System. 
+  const systemPrompt = `You are an AI assistant for Enrollytics, a Freshman Enrollment Analytics System. 
 Your role is to help administrators and staff understand student enrollment insights.
 You must ONLY answer questions related to student enrollment data, academic programs, departments, enrollment trends, and related analytics.
 Do NOT answer questions unrelated to enrollment or education analytics.

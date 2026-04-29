@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import { MAX_MESSAGE_LENGTH } from '@/app/api/chat/route'
 
 type Message = {
   role: 'user' | 'assistant'
@@ -202,7 +203,7 @@ export default function ChatbotInterface({ enrollmentContext }: ChatbotInterface
             onKeyDown={handleKeyDown}
             placeholder="Ask about enrollment insights... (Enter to send)"
             rows={2}
-            maxLength={2000}
+            maxLength={MAX_MESSAGE_LENGTH}
             className="flex-1 resize-none rounded-xl border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent placeholder-gray-400"
             disabled={loading}
           />

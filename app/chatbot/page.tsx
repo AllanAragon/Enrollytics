@@ -3,10 +3,12 @@ import { isSupabaseConfigured } from '@/lib/supabase/client'
 import { createClient } from '@/lib/supabase/server'
 import ChatbotInterface from '@/components/ChatbotInterface'
 
+type StudentSummary = { age: number; enrolled_year: number; program_id: string | null }
+
 async function buildEnrollmentContext(): Promise<string> {
   const currentYear = new Date().getFullYear()
 
-  let students = mockStudents
+  let students: StudentSummary[] = mockStudents
   let programs = mockPrograms
   let departments = mockDepartments
   let totalStudents = mockStudents.length
@@ -16,7 +18,7 @@ async function buildEnrollmentContext(): Promise<string> {
       const supabase = await createClient()
       if (supabase) {
         const [studentsRes, programsRes, departmentsRes] = await Promise.all([
-          supabase.from('students').select('*').limit(500),
+          supabase.from('students').select('age, enrolled_year, program_id').limit(500),
           supabase.from('programs').select('*'),
           supabase.from('departments').select('*'),
         ])
@@ -137,7 +139,7 @@ export default async function ChatbotPage() {
         </div>
       )}
 
-      <div className="flex-1 min-h-0" style={{ height: 'calc(100vh - 220px)' }}>
+      <div className="flex-1 min-h-0 overflow-hidden">
         <ChatbotInterface enrollmentContext={enrollmentContext} />
       </div>
     </div>
