@@ -17,9 +17,9 @@ const emptyForm = {
 }
 
 export default function StudentsPage() {
-  const [students, setStudents] = useState<Student[]>([])
-  const [programs, setPrograms] = useState<Program[]>([])
-  const [loading, setLoading] = useState(true)
+  const [students, setStudents] = useState<Student[]>(isSupabaseConfigured ? [] : mockStudents)
+  const [programs, setPrograms] = useState<Program[]>(isSupabaseConfigured ? [] : mockPrograms)
+  const [loading, setLoading] = useState(isSupabaseConfigured)
   const [showModal, setShowModal] = useState(false)
   const [editing, setEditing] = useState<Student | null>(null)
   const [form, setForm] = useState(emptyForm)

@@ -9,9 +9,9 @@ import { Program, Department } from '@/types/database'
 const emptyForm = { name: '', code: '', description: '', department_id: '' }
 
 export default function ProgramsPage() {
-  const [programs, setPrograms] = useState<Program[]>([])
-  const [departments, setDepartments] = useState<Department[]>([])
-  const [loading, setLoading] = useState(true)
+  const [programs, setPrograms] = useState<Program[]>(isSupabaseConfigured ? [] : mockPrograms)
+  const [departments, setDepartments] = useState<Department[]>(isSupabaseConfigured ? [] : mockDepartments)
+  const [loading, setLoading] = useState(isSupabaseConfigured)
   const [showModal, setShowModal] = useState(false)
   const [editing, setEditing] = useState<Program | null>(null)
   const [form, setForm] = useState(emptyForm)
