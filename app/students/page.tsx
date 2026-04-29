@@ -86,7 +86,7 @@ export default function StudentsPage() {
       setError('Please enter a valid age.')
       return
     }
-    if (isNaN(enrolled_year) || enrolled_year < 1900 || enrolled_year > currentYear) {
+    if (isNaN(enrolled_year) || enrolled_year < 1900 || enrolled_year > currentYear + 1) {
       setError('Please enter a valid enrolled year.')
       return
     }
@@ -144,7 +144,7 @@ export default function StudentsPage() {
     fetchData()
   }
 
-  const years = Array.from({ length: 10 }, (_, i) => currentYear - i)
+  const years = Array.from({ length: 10 }, (_, i) => currentYear + 1 - i)
 
   return (
     <div className="p-8">
