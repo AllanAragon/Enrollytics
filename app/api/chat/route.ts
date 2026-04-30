@@ -193,7 +193,7 @@ RULES:
 
   const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY })
   const response = await ai.models.generateContent({
-    model: 'gemini-1.5-flash-latest',
+    model: 'gemini-2.5-flash-lite',
     contents: prompt,
     config: { temperature: 0.3, maxOutputTokens: 1024 },
   })
