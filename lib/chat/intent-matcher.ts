@@ -7,12 +7,15 @@ export type Intent =
   | 'enrollment_by_program'
   | 'growth_rate'
   | 'average_age'
+  | 'demographics'
   | 'unknown'
 
 // Patterns ordered most-specific first to avoid false matches
 const PATTERNS: [Intent, RegExp][] = [
   // Explicit growth/comparison terms
   ['growth_rate',              /\bgrowth rate\b|\byear.?over.?year\b|\byoy\b|\bhow much.*(grew|grow|increas|decreas|chang)/i],
+  // Demographics (age distribution, location, gender)
+  ['demographics',             /\bdemographics?\b|\bage distribution\b|\blocation distribution\b|\bwhere.*(from|live)\b|\baddress|age range\b|\bgender\b|\bmale\b|\bfemale\b|\bgender distribution\b/i],
   // Age-related queries
   ['average_age',              /\baverage age\b|\bavg age\b|\bmean age\b|\bhow old\b/i],
   // Year-based breakdown or trends

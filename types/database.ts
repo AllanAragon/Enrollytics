@@ -72,6 +72,7 @@ export interface Database {
           first_name: string
           last_name: string
           age: number
+          gender: 'Male' | 'Female'
           address: string
           enrolled_year: number
           program_id: string | null
@@ -83,6 +84,7 @@ export interface Database {
           first_name: string
           last_name: string
           age: number
+          gender: 'Male' | 'Female'
           address: string
           enrolled_year: number
           program_id?: string | null
@@ -94,6 +96,7 @@ export interface Database {
           first_name?: string
           last_name?: string
           age?: number
+          gender?: 'Male' | 'Female'
           address?: string
           enrolled_year?: number
           program_id?: string | null

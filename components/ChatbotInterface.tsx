@@ -1,14 +1,14 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { MAX_MESSAGE_LENGTH } from '@/lib/chat/intent-matcher'
 import type { ChartData } from '@/app/api/chat/route'
+
+const MAX_MESSAGE_LENGTH = 2000
 
 type Message = {
   role: 'user' | 'assistant'
   content: string
   chart?: ChartData
-  source?: 'rule-based' | 'ai-generated'
 }
 
 // Render **bold** markdown inline
@@ -24,8 +24,14 @@ function renderText(text: string): React.ReactNode {
 }
 
 function InlineBarChart({ chart }: { chart: ChartData }) {
-  const dataset = chart.datasets[0]
-  const maxValue = Math.max(...dataset.data, 1)
+  // Handle both formats: datasets[0].data or values array
+  const data = chart.datasets?.[0]?.data ?? (chart as any).values ?? []
+  const maxValue = Math.max(...data, 1)
+
+  // Ensure we have labels
+  if (!chart.labels || chart.labels.length === 0) {
+    return null
+  }
 
   return (
     <div className="mt-3 bg-white rounded-lg border border-gray-200 p-3">
@@ -38,12 +44,12 @@ function InlineBarChart({ chart }: { chart: ChartData }) {
               <div
                 className="h-full bg-indigo-500 rounded flex items-center justify-end pr-2 transition-all duration-500"
                 style={{
-                  width: `${(dataset.data[i] / maxValue) * 100}%`,
-                  minWidth: dataset.data[i] > 0 ? '2rem' : '0',
+                  width: `${(data[i] / maxValue) * 100}%`,
+                  minWidth: data[i] > 0 ? '2rem' : '0',
                 }}
               >
-                {dataset.data[i] > 0 && (
-                  <span className="text-white text-xs font-medium">{dataset.data[i]}</span>
+                {data[i] > 0 && (
+                  <span className="text-white text-xs font-medium">{data[i]}</span>
                 )}
               </div>
             </div>
@@ -98,7 +104,6 @@ export default function ChatbotInterface() {
             role: 'assistant',
             content: data.reply,
             chart: data.chart,
-            source: data.source,
           },
         ])
       }
@@ -122,7 +127,8 @@ export default function ChatbotInterface() {
     'How many students per department?',
     'What is the year-over-year growth rate?',
     'Which program has the most students?',
-    'What is the average age of students?',
+    'What is the gender distribution?',
+    'Show me demographics',
   ]
 
   return (
@@ -141,7 +147,7 @@ export default function ChatbotInterface() {
         </div>
         <div>
           <h3 className="text-white font-semibold text-sm">Enrollment AI Assistant</h3>
-          <p className="text-indigo-200 text-xs">Powered by Google Gemini · Intent-optimized</p>
+          <p className="text-indigo-200 text-xs">Powered by Google Gemini · Full AI Mode</p>
         </div>
         <div className="ml-auto flex items-center gap-1.5">
           <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
@@ -190,27 +196,6 @@ export default function ChatbotInterface() {
                 {msg.role === 'assistant' ? renderText(msg.content) : msg.content}
                 {msg.chart && <InlineBarChart chart={msg.chart} />}
               </div>
-
-              {/* Source badge */}
-              {msg.role === 'assistant' && msg.source && (
-                <div className="flex items-center gap-1">
-                  {msg.source === 'rule-based' ? (
-                    <span className="text-xs text-green-600 flex items-center gap-1">
-                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
-                      </svg>
-                      Answered instantly
-                    </span>
-                  ) : (
-                    <span className="text-xs text-purple-600 flex items-center gap-1">
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                      </svg>
-                      AI-generated
-                    </span>
-                  )}
-                </div>
-              )}
             </div>
           </div>
         ))}
