@@ -265,7 +265,7 @@ export default function ChatbotInterface() {
             placeholder="Ask about enrollment insights… (Enter to send)"
             rows={2}
             maxLength={MAX_MESSAGE_LENGTH}
-            className="flex-1 resize-none rounded-xl border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent placeholder-gray-400"
+            className="flex-1 resize-none rounded-xl border border-gray-300 px-4 py-3 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent placeholder-gray-400"
             disabled={loading}
           />
           <button

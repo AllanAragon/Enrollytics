@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import Link from 'next/link'
+import FloatingChatWidget from '@/components/FloatingChatWidget'
 
 export const metadata: Metadata = {
   title: 'Enrollytics',
@@ -59,7 +60,7 @@ export default function RootLayout({
                 </svg>
                 Departments
               </Link>
-              <Link
+             {/** <Link
                 href="/chatbot"
                 className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-indigo-800 transition-colors text-sm font-medium"
               >
@@ -67,7 +68,7 @@ export default function RootLayout({
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                 </svg>
                 AI Assistant
-              </Link>
+              </Link>**/}
             </nav>
             <div className="p-4 border-t border-indigo-700">
               <p className="text-indigo-400 text-xs text-center">Enrollytics v1.0</p>
@@ -79,6 +80,9 @@ export default function RootLayout({
             {children}
           </main>
         </div>
+
+        {/* Global Floating AI Assistant */}
+        <FloatingChatWidget />
       </body>
     </html>
   )

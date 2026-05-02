@@ -8,12 +8,27 @@ import { Student, Program, Department } from '@/types/database'
 import { PlusIcon, EditIcon, TrashIcon, CheckIcon, XIcon, UploadIcon, DownloadIcon } from '@/components/Icons'
 import * as XLSX from 'xlsx'
 
+// City coordinates mapping
+const CITIES = [
+  { name: 'Davao City', latitude: 7.1907, longitude: 125.4553 },
+  { name: 'Panabo City', latitude: 7.3081, longitude: 125.6847 },
+  { name: 'Tagum City', latitude: 7.4478, longitude: 125.8076 },
+  { name: 'Digos City', latitude: 6.7490, longitude: 125.3572 },
+  { name: 'Mati City', latitude: 6.9551, longitude: 126.2166 },
+  { name: 'Kidapawan City', latitude: 7.0083, longitude: 125.0896 },
+  { name: 'General Santos City', latitude: 6.1164, longitude: 125.1716 },
+  { name: 'Koronadal City', latitude: 6.5031, longitude: 124.8463 },
+]
+
 const currentYear = new Date().getFullYear()
 const emptyForm = {
   first_name: '',
   last_name: '',
   age: '',
+  gender: 'Male' as 'Male' | 'Female',
   address: '',
+  latitude: null as number | null,
+  longitude: null as number | null,
   enrolled_year: String(currentYear),
   program_id: '',
 }
@@ -191,7 +206,10 @@ export default function StudentsPage() {
       first_name: student.first_name,
       last_name: student.last_name,
       age: String(student.age),
+      gender: student.gender,
       address: student.address,
+      latitude: student.latitude,
+      longitude: student.longitude,
       enrolled_year: String(student.enrolled_year),
       program_id: student.program_id || '',
     })
@@ -225,7 +243,10 @@ export default function StudentsPage() {
       first_name: form.first_name,
       last_name: form.last_name,
       age,
+      gender: form.gender,
       address: form.address,
+      latitude: form.latitude,
+      longitude: form.longitude,
       enrolled_year,
       program_id: form.program_id || null,
     }
@@ -277,7 +298,8 @@ export default function StudentsPage() {
         'First Name': 'Juan',
         'Last Name': 'dela Cruz',
         'Age': 18,
-        'Address': '123 Main St, City, Province',
+        'Gender': 'Male',
+        'Address': 'Davao City',
         'Enrolled Year': currentYear,
         'Program Code': 'BSCS'
       },
@@ -285,7 +307,8 @@ export default function StudentsPage() {
         'First Name': 'Maria',
         'Last Name': 'Santos',
         'Age': 19,
-        'Address': '456 Oak Ave, City, Province',
+        'Gender': 'Female',
+        'Address': 'Tagum City',
         'Enrolled Year': currentYear,
         'Program Code': 'BSIT'
       }
@@ -326,10 +349,22 @@ export default function StudentsPage() {
           errors.push(`Row ${rowNum}: Invalid age`)
           return
         }
+        if (!row['Gender'] || !['Male', 'Female'].includes(row['Gender'])) {
+          errors.push(`Row ${rowNum}: Gender must be 'Male' or 'Female'`)
+          return
+        }
         if (!row['Address']) {
           errors.push(`Row ${rowNum}: Address is required`)
           return
         }
+        
+        // Validate city and get coordinates
+        const city = CITIES.find(c => c.name === row['Address'])
+        if (!city) {
+          errors.push(`Row ${rowNum}: Invalid city. Must be one of: ${CITIES.map(c => c.name).join(', ')}`)
+          return
+        }
+        
         if (!row['Enrolled Year'] || isNaN(row['Enrolled Year'])) {
           errors.push(`Row ${rowNum}: Invalid enrolled year`)
           return
@@ -350,7 +385,10 @@ export default function StudentsPage() {
           first_name: String(row['First Name']).trim(),
           last_name: String(row['Last Name']).trim(),
           age: parseInt(row['Age']),
-          address: String(row['Address']).trim(),
+          gender: row['Gender'] as 'Male' | 'Female',
+          address: city.name,
+          latitude: city.latitude,
+          longitude: city.longitude,
           enrolled_year: parseInt(row['Enrolled Year']),
           program_id
         })
@@ -518,10 +556,11 @@ export default function StudentsPage() {
               <tr className="border-b border-gray-200 bg-gray-50">
                 <th className="text-left px-6 py-4 text-sm font-semibold text-gray-600">Name</th>
                 <th className="text-left px-6 py-4 text-sm font-semibold text-gray-600">Age</th>
+                <th className="text-left px-6 py-4 text-sm font-semibold text-gray-600">Gender</th>
+                <th className="text-left px-6 py-4 text-sm font-semibold text-gray-600">City</th>
                 <th className="text-left px-6 py-4 text-sm font-semibold text-gray-600">Enrolled Year</th>
                 <th className="text-left px-6 py-4 text-sm font-semibold text-gray-600">Department</th>
                 <th className="text-left px-6 py-4 text-sm font-semibold text-gray-600">Program</th>
-                <th className="text-left px-6 py-4 text-sm font-semibold text-gray-600">Address</th>
                 <th className="text-right px-6 py-4 text-sm font-semibold text-gray-600">Actions</th>
               </tr>
             </thead>
@@ -531,11 +570,16 @@ export default function StudentsPage() {
                   <td className="px-6 py-4 font-medium text-gray-900">{student.first_name} {student.last_name}</td>
                   <td className="px-6 py-4 text-gray-600">{student.age}</td>
                   <td className="px-6 py-4">
-                    <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded text-sm font-medium">{student.enrolled_year}</span>
+                    <span className={`px-2 py-1 rounded text-xs font-medium ${student.gender === 'Male' ? 'bg-blue-100 text-blue-700' : 'bg-pink-100 text-pink-700'}`}>
+                      {student.gender}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-gray-600 text-sm">{student.address}</td>
+                  <td className="px-6 py-4">
+                    <span className="bg-indigo-100 text-indigo-700 px-2 py-1 rounded text-sm font-medium">{student.enrolled_year}</span>
                   </td>
                   <td className="px-6 py-4 text-gray-500 text-sm">{getDepartmentName(student.program_id)}</td>
                   <td className="px-6 py-4 text-gray-500 text-sm">{getProgramName(student.program_id)}</td>
-                  <td className="px-6 py-4 text-gray-500 text-sm max-w-xs truncate">{student.address}</td>
                   <td className="px-6 py-4 text-right space-x-2">
                     <button onClick={() => openEdit(student)} className="inline-flex items-center gap-2 bg-indigo-100 text-indigo-700 hover:bg-indigo-600 hover:text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
                       <EditIcon className="w-4 h-4" /> 
@@ -649,6 +693,20 @@ export default function StudentsPage() {
                   />
                 </div>
                 <div>
+                  <label className="block text-sm font-semibold text-gray-800 mb-2">Gender <span className="text-red-500">*</span></label>
+                  <select
+                    value={form.gender}
+                    onChange={e => setForm(f => ({ ...f, gender: e.target.value as 'Male' | 'Female' }))}
+                    className="w-full border-2 border-gray-400 bg-gray-50 text-gray-900 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:bg-white transition-colors"
+                    required
+                  >
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
                   <label className="block text-sm font-semibold text-gray-800 mb-2">Enrolled Year <span className="text-red-500">*</span></label>
                   <select
                     value={form.enrolled_year}
@@ -661,17 +719,28 @@ export default function StudentsPage() {
                     ))}
                   </select>
                 </div>
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-800 mb-2">Address <span className="text-red-500">*</span></label>
-                <textarea
-                  value={form.address}
-                  onChange={e => setForm(f => ({ ...f, address: e.target.value }))}
-                  className="w-full border-2 border-gray-400 bg-gray-50 text-gray-900 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:bg-white transition-colors placeholder:text-gray-400"
-                  rows={2}
-                  placeholder="123 Main St, City, Province"
-                  required
-                />
+                <div>
+                  <label className="block text-sm font-semibold text-gray-800 mb-2">City / Address <span className="text-red-500">*</span></label>
+                  <select
+                    value={form.address}
+                    onChange={e => {
+                      const selectedCity = CITIES.find(c => c.name === e.target.value)
+                      setForm(f => ({ 
+                        ...f, 
+                        address: e.target.value,
+                        latitude: selectedCity?.latitude || null,
+                        longitude: selectedCity?.longitude || null
+                      }))
+                    }}
+                    className="w-full border-2 border-gray-400 bg-gray-50 text-gray-900 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:bg-white transition-colors"
+                    required
+                  >
+                    <option value="">— Select City —</option>
+                    {CITIES.map(city => (
+                      <option key={city.name} value={city.name}>{city.name}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-semibold text-gray-800 mb-2">Program / Course</label>

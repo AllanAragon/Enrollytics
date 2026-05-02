@@ -74,6 +74,8 @@ export interface Database {
           age: number
           gender: 'Male' | 'Female'
           address: string
+          latitude: number | null
+          longitude: number | null
           enrolled_year: number
           program_id: string | null
           created_at: string
@@ -86,6 +88,8 @@ export interface Database {
           age: number
           gender: 'Male' | 'Female'
           address: string
+          latitude?: number | null
+          longitude?: number | null
           enrolled_year: number
           program_id?: string | null
           created_at?: string
@@ -98,6 +102,8 @@ export interface Database {
           age?: number
           gender?: 'Male' | 'Female'
           address?: string
+          latitude?: number | null
+          longitude?: number | null
           enrolled_year?: number
           program_id?: string | null
           created_at?: string
