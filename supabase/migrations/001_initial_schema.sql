@@ -29,7 +29,10 @@ CREATE TABLE IF NOT EXISTS students (
   enrolled_year INTEGER NOT NULL,
   program_id UUID REFERENCES programs(id) ON DELETE SET NULL,
   created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
+  updated_at TIMESTAMPTZ DEFAULT NOW(), 
+  gender TEXT null,
+  latitude NUMERIC null,
+  longitude NUMERIC null
 );
 
 -- Updated_at trigger function
